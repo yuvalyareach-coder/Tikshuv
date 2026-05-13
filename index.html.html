@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>הרפתקת הקוד 🎮 - מסע אל לב המחשב</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&family=Suez+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0e27;
+    --bg-mid: #131838;
+    --bg-card: #1a2050;
+    --cyan: #00f0ff;
+    --magenta: #ff2ec4;
+    --green: #00ff9d;
+    --yellow: #ffd60a;
+    --red: #ff3860;
+    --purple: #9d4edd;
+    --text: #ffffff;
+    --text-dim: #a8b2d1;
+    --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.5), 0 0 40px rgba(0, 240, 255, 0.2);
+    --glow-magenta: 0 0 20px rgba(255, 46, 196, 0.5), 0 0 40px rgba(255, 46, 196, 0.2);
+    --glow-green: 0 0 20px rgba(0, 255, 157, 0.5), 0 0 40px rgba(0, 255, 157, 0.2);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: 'Rubik', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text);
+    position: relative;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.06) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+    animation: gridMove 20s linear infinite;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 20% 30%, rgba(255, 46, 196, 0.15), transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 240, 255, 0.15), transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(157, 78, 221, 0.1), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 50px 50px; }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  /* HUD */
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(26, 32, 80, 0.7);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--cyan);
+    border-radius: 16px;
+    padding: 14px 22px;
+    margin-bottom: 25px;
+    box-shadow: var(--glow-cyan);
+    position: sticky;
+    top: 10px;
+    z-index: 10;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .hud-label {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  .score-value {
+    color: var(--yellow);
+    font-size: 1.4rem;
+    text-shadow: 0 0 10px rgba(255, 214, 10, 0.6);
+    min-width: 50px;
+    display: inline-block;
+  }
+
+  .streak-value {
+    color: var(--magenta);
+    font-size: 1.4rem;
+    text-shadow: var(--glow-magenta);
+  }
+
+  .lives {
+    display: flex;
+    gap: 5px;
+    font-size: 1.5rem;
+  }
+
+  .heart {
+    transition: all 0.3s ease;
+  }
+
+  .heart.lost {
+    opacity: 0.2;
+    transform: scale(0.7);
+    filter: grayscale(1);
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+    flex-basis: 100%;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--magenta));
+    border-radius: 4px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px var(--cyan);
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    animation: fadeInUp 0.6s ease;
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Welcome screen */
+  .welcome-card {
+    background: linear-gradient(135deg, rgba(26, 32, 80, 0.9), rgba(19, 24, 56, 0.9));
+    backdrop-filter: blur(20px);
+    border: 2px solid var(--cyan);
+    border-radius: 24px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: var(--glow-cyan);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .welcome-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(0, 240, 255, 0.1), transparent, rgba(255, 46, 196, 0.1), transparent);
+    animation: rotate 8s linear infinite;
+    z-index: 0;
+  }
+
+  .welcome-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes rotate {
+    to { transform: rotate(360deg); }
+  }
+
+  .game-title {
+    font-family: 'Suez One', serif;
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    background: linear-gradient(135deg, var(--cyan), var(--magenta), var(--yellow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    line-height: 1.1;
+    text-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+  }
+
+  .game-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-dim);
+    margin-bottom: 30px;
+  }
+
+  .story-box {
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 4px solid var(--magenta);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 25px 0;
+    text-align: right;
+    line-height: 1.8;
+    font-size: 1.05rem;
+  }
+
+  .story-box strong {
+    color: var(--cyan);
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 25px 0;
+    text-align: right;
+  }
+
+  .input-group label {
+    font-weight: 700;
+    color: var(--cyan);
+  }
+
+  input[type="text"] {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--cyan);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 1.1rem;
+    color: var(--text);
+    font-family: inherit;
+    direction: rtl;
+    transition: all 0.3s;
+  }
+
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--magenta);
+    box-shadow: var(--glow-magenta);
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    color: var(--bg-deep);
+    border: none;
+    padding: 16px 38px;
+    font-size: 1.15rem;
+    font-weight: 900;
+    font-family: inherit;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 8px 30px rgba(0, 240, 255, 0.6);
+  }
+
+  .btn:active {
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, var(--magenta), var(--purple));
+    color: white;
+    box-shadow: 0 4px 20px rgba(255, 46, 196, 0.4);
+  }
+
+  /* Mission intro */
+  .mission-intro {
+    background: linear-gradient(135deg, rgba(26, 32, 80, 0.9), rgba(19, 24, 56, 0.9));
+    border: 2px solid var(--magenta);
+    border-radius: 24px;
+    padding: 35px;
+    text-align: center;
+    box-shadow: var(--glow-magenta);
+  }
+
+  .mission-number {
+    display: inline-block;
+    background: var(--magenta);
+    color: white;
+    padding: 6px 18px;
+    border-radius: 50px;
+    font-weight: 900;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    letter-spacing: 2px;
+  }
+
+  .mission-title {
+    font-family: 'Suez One', serif;
+    font-size: 2.2rem;
+    color: var(--cyan);
+    margin-bottom: 15px;
+    text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+  }
+
+  .mission-emoji {
+    font-size: 4rem;
+    margin: 20px 0;
+    display: inline-block;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  .mission-desc {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin-bottom: 25px;
+    line-height: 1.7;
+  }
+
+  /* Question card */
+  .question-card {
+    background: linear-gradient(135deg, rgba(26, 32, 80, 0.95), rgba(19, 24, 56, 0.95));
+    border: 2px solid var(--cyan);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: var(--glow-cyan);
+    position: relative;
+  }
+
+  .question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .question-badge {
+    background: var(--magenta);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .question-points {
+    color: var(--yellow);
+    font-weight: 700;
+  }
+
+  .question-text {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 25px;
+    line-height: 1.5;
+  }
+
+  .question-hint {
+    background: rgba(255, 214, 10, 0.1);
+    border-right: 3px solid var(--yellow);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: var(--yellow);
+    font-size: 0.95rem;
+  }
+
+  .options {
+    display: grid;
+    gap: 12px;
+  }
+
+  .option {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(0, 240, 255, 0.3);
+    border-radius: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: right;
+    font-size: 1.05rem;
+    color: var(--text);
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .option:hover:not(:disabled) {
+    border-color: var(--cyan);
+    background: rgba(0, 240, 255, 0.1);
+    transform: translateX(-5px);
+    box-shadow: var(--glow-cyan);
+  }
+
+  .option:disabled {
+    cursor: not-allowed;
+  }
+
+  .option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    background: var(--cyan);
+    color: var(--bg-deep);
+    border-radius: 50%;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+
+  .option.correct {
+    border-color: var(--green);
+    background: rgba(0, 255, 157, 0.15);
+    box-shadow: var(--glow-green);
+    animation: correctPulse 0.6s ease;
+  }
+
+  .option.correct .option-letter {
+    background: var(--green);
+  }
+
+  .option.wrong {
+    border-color: var(--red);
+    background: rgba(255, 56, 96, 0.15);
+    animation: shake 0.5s ease;
+  }
+
+  .option.wrong .option-letter {
+    background: var(--red);
+  }
+
+  @keyframes correctPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+
+  /* Explanation */
+  .explanation {
+    margin-top: 25px;
+    padding: 20px;
+    border-radius: 14px;
+    display: none;
+    animation: fadeInUp 0.5s ease;
+  }
+
+  .explanation.show {
+    display: block;
+  }
+
+  .explanation.correct {
+    background: rgba(0, 255, 157, 0.1);
+    border: 2px solid var(--green);
+  }
+
+  .explanation.wrong {
+    background: rgba(255, 56, 96, 0.1);
+    border: 2px solid var(--red);
+  }
+
+  .explanation-header {
+    font-size: 1.3rem;
+    font-weight: 900;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .explanation.correct .explanation-header {
+    color: var(--green);
+  }
+
+  .explanation.wrong .explanation-header {
+    color: var(--red);
+  }
+
+  .explanation-body {
+    color: var(--text);
+    line-height: 1.8;
+    font-size: 1rem;
+  }
+
+  .explanation-body strong {
+    color: var(--cyan);
+  }
+
+  .explanation-body .example {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border-right: 3px solid var(--yellow);
+  }
+
+  .next-btn {
+    margin-top: 20px;
+    display: none;
+  }
+
+  .next-btn.show {
+    display: inline-block;
+  }
+
+  /* Final screen */
+  .final-card {
+    background: linear-gradient(135deg, rgba(26, 32, 80, 0.95), rgba(19, 24, 56, 0.95));
+    border: 3px solid var(--yellow);
+    border-radius: 24px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 0 50px rgba(255, 214, 10, 0.4);
+    position: relative;
+  }
+
+  .trophy {
+    font-size: 6rem;
+    display: inline-block;
+    animation: trophy 1s ease;
+  }
+
+  @keyframes trophy {
+    0% { transform: scale(0) rotate(-180deg); }
+    50% { transform: scale(1.2) rotate(10deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  .final-title {
+    font-family: 'Suez One', serif;
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, var(--yellow), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 15px 0;
+  }
+
+  .final-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin: 30px 0;
+  }
+
+  .stat-box {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--cyan);
+    border-radius: 16px;
+    padding: 20px 15px;
+  }
+
+  .stat-value {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+  }
+
+  .stat-label {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-top: 5px;
+  }
+
+  .achievement {
+    background: linear-gradient(135deg, rgba(255, 214, 10, 0.2), rgba(255, 46, 196, 0.2));
+    border: 2px solid var(--yellow);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 1000;
+    animation: confettiFall 3s linear forwards;
+  }
+
+  @keyframes confettiFall {
+    to {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  /* Floating bits decoration */
+  .floating-bit {
+    position: absolute;
+    color: var(--cyan);
+    font-family: monospace;
+    font-weight: 900;
+    opacity: 0.15;
+    pointer-events: none;
+    animation: floatBit 8s linear infinite;
+  }
+
+  @keyframes floatBit {
+    0% { transform: translateY(100vh) rotate(0); opacity: 0; }
+    10% { opacity: 0.2; }
+    90% { opacity: 0.2; }
+    100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: var(--green);
+    color: var(--bg-deep);
+    padding: 14px 28px;
+    border-radius: 50px;
+    font-weight: 900;
+    font-size: 1.1rem;
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 5px 25px rgba(0, 255, 157, 0.5);
+  }
+
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast.danger {
+    background: var(--red);
+    color: white;
+    box-shadow: 0 5px 25px rgba(255, 56, 96, 0.5);
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    .welcome-card, .mission-intro, .question-card, .final-card { padding: 25px 18px; }
+    .hud { padding: 10px 14px; font-size: 0.9rem; }
+    .hud-item { font-size: 0.95rem; }
+    .game-title { font-size: 2rem; }
+    .mission-title { font-size: 1.6rem; }
+    .question-text { font-size: 1.15rem; }
+    .final-title { font-size: 1.8rem; }
+    .btn { padding: 14px 28px; font-size: 1.05rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HUD -->
+  <div class="hud" id="hud" style="display: none;">
+    <div class="hud-item">
+      <span class="hud-label">🏆 ניקוד:</span>
+      <span class="score-value" id="scoreDisplay">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">🔥 רצף:</span>
+      <span class="streak-value" id="streakDisplay">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">❤️ חיים:</span>
+      <div class="lives" id="livesDisplay">
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+      </div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+    </div>
+  </div>
+
+  <!-- Welcome Screen -->
+  <div class="screen active" id="welcomeScreen">
+    <div class="welcome-card">
+      <div style="font-size: 4rem; margin-bottom: 10px;">🎮💻</div>
+      <h1 class="game-title">הרפתקת הקוד</h1>
+      <p class="game-subtitle">מסע אל לב המחשב — ביטים, בייטים וסודות הזיכרון</p>
+
+      <div class="story-box">
+        🚀 <strong>ברוך הבא, חייל דיגיטלי!</strong><br>
+        אתה עומד להיכנס ל<strong>אקדמיה הסודית של עולם המחשבים</strong>. כדי לקבל את התואר היוקרתי "מאסטר של הקוד", תצטרך לעבור <strong>4 משימות מאתגרות</strong> ולענות נכון על שאלות בנושא ביטים, בייטים ויחידות מידע.<br><br>
+        💡 <strong>הכללים:</strong> תקבל <strong>3 חיים ❤️</strong>. כל תשובה נכונה = <strong>100 נקודות</strong> + בונוס לרצף! אל תדאג אם טעית — ההסבר יעזור לך ללמוד ולהשתפר.<br><br>
+        🎯 <strong>המטרה:</strong> להגיע ל<strong>1000+ נקודות</strong> ולקבל את התואר!
+      </div>
+
+      <div class="input-group">
+        <label for="playerName">איך קוראים לך, גיבור/ה?</label>
+        <input type="text" id="playerName" placeholder="הכנס שם..." maxlength="20">
+      </div>
+
+      <button class="btn" onclick="startGame()">🚀 בואו נצא להרפתקה!</button>
+    </div>
+  </div>
+
+  <!-- Mission Intro Screen -->
+  <div class="screen" id="missionScreen">
+    <div class="mission-intro">
+      <span class="mission-number" id="missionNum">משימה 1</span>
+      <div class="mission-emoji" id="missionEmoji">💡</div>
+      <h2 class="mission-title" id="missionTitle">סוד הביט</h2>
+      <p class="mission-desc" id="missionDesc">תיאור המשימה</p>
+      <button class="btn" onclick="startMission()">בואו נתחיל! 💪</button>
+    </div>
+  </div>
+
+  <!-- Question Screen -->
+  <div class="screen" id="questionScreen">
+    <div class="question-card">
+      <div class="question-header">
+        <span class="question-badge" id="questionBadge">שאלה 1/12</span>
+        <span class="question-points">+100 נקודות 💰</span>
+      </div>
+      <h3 class="question-text" id="questionText">השאלה כאן</h3>
+      <div class="question-hint" id="questionHint" style="display: none;">💡 רמז כאן</div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="explanation" id="explanation">
+        <div class="explanation-header" id="explanationHeader"></div>
+        <div class="explanation-body" id="explanationBody"></div>
+      </div>
+      <button class="btn next-btn" id="nextBtn" onclick="nextQuestion()">המשך הלאה ➡️</button>
+    </div>
+  </div>
+
+  <!-- Final Screen -->
+  <div class="screen" id="finalScreen">
+    <div class="final-card">
+      <div class="trophy" id="finalEmoji">🏆</div>
+      <h1 class="final-title" id="finalTitle">כל הכבוד!</h1>
+      <p id="finalMessage" style="font-size: 1.15rem; color: var(--text-dim); margin-bottom: 20px;">השלמת את ההרפתקה!</p>
+
+      <div class="final-stats">
+        <div class="stat-box">
+          <div class="stat-value" id="finalScore">0</div>
+          <div class="stat-label">ניקוד כולל</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="finalCorrect">0</div>
+          <div class="stat-label">תשובות נכונות</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="finalStreak">0</div>
+          <div class="stat-label">רצף מקסימלי</div>
+        </div>
+      </div>
+
+      <div class="achievement" id="achievementBox">
+        🎖️ <span id="achievementText">תואר: מאסטר של הקוד!</span>
+      </div>
+
+      <p id="summaryText" style="margin: 20px 0; color: var(--text-dim); line-height: 1.7;"></p>
+
+      <button class="btn" onclick="restartGame()">🔄 לשחק שוב</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ===== Game Data =====
+  const missions = [
+    {
+      num: "משימה 1",
+      title: "סוד הביט",
+      emoji: "💡",
+      desc: "כל מסע מתחיל בצעד אחד קטן... ובמחשב — בביט אחד קטן! בוא נגלה מהו הביט ולמה הוא כל כך חשוב.",
+      questions: [
+        {
+          q: "מהו ביט (Bit)?",
+          hint: "המילה Bit היא קיצור של Binary Digit — ספרה בינארית",
+          options: [
+            "יחידת המידע הקטנה ביותר במחשב",
+            "סוג של קובץ במחשב",
+            "מהירות האינטרנט",
+            "סוג של תוכנה"
+          ],
+          correct: 0,
+          explanation: "<strong>ביט (Bit)</strong> הוא יחידת המידע <strong>הקטנה ביותר</strong> במחשב — בדיוק כמו אטום בעולם הפיזי.<div class='example'>🔌 דמיין מתג חשמל: או שהאור <strong>דולק (1)</strong> או <strong>כבוי (0)</strong>. אין אמצע. זה בדיוק ביט!</div>"
+        },
+        {
+          q: "אילו ערכים יכולים להיות לביט?",
+          hint: "תחשוב על מתג — כמה מצבים יש לו?",
+          options: [
+            "0-9",
+            "0 או 1 בלבד",
+            "כל מספר שתרצה",
+            "אותיות א-ת"
+          ],
+          correct: 1,
+          explanation: "ביט יכול להיות רק <strong>0 או 1</strong> — שני מצבים בלבד! זה נקרא <strong>שיטה בינארית</strong> (בינ = שניים).<div class='example'>💡 0 = כבוי / לא / שקר<br>💡 1 = דלוק / כן / אמת<br><br>המחשב 'מדבר' רק בשפה של 0 ו-1!</div>"
+        },
+        {
+          q: "למה דווקא 0 ו-1? למה לא משתמשים בכל הספרות 0-9?",
+          hint: "המחשב עובד עם חשמל...",
+          options: [
+            "כי 0 ו-1 קלים יותר לזכור",
+            "כי קל לייצג שני מצבים בחשמל: יש זרם (1) או אין זרם (0)",
+            "סתם כי ככה",
+            "כי המחשב לא יודע לספור עד 10"
+          ],
+          correct: 1,
+          explanation: "המחשב בנוי ממיליוני <strong>מתגים חשמליים זעירים</strong> (טרנזיסטורים). <strong>קל מאוד</strong> לדעת אם עובר זרם או לא — אבל קשה לדעת בדיוק כמה זרם.<div class='example'>⚡ זה כמו לבדוק אם הברז פתוח או סגור — קל!<br>אבל למדוד בדיוק בכמה אחוז הוא פתוח — קשה יותר.<br><br>לכן הנדסאים בחרו במערכת של רק <strong>2 מצבים</strong> — וזה עובד מצוין!</div>"
+        }
+      ]
+    },
+    {
+      num: "משימה 2",
+      title: "כוח הבייט",
+      emoji: "📦",
+      desc: "ביט אחד זה מעט מדי. אז המחשב מקבץ ביטים יחד ויוצר יחידה חזקה יותר — הבייט!",
+      questions: [
+        {
+          q: "כמה ביטים יש בבייט אחד (Byte)?",
+          hint: "המספר נמצא בין 5 ל-10...",
+          options: [
+            "4 ביטים",
+            "8 ביטים",
+            "10 ביטים",
+            "100 ביטים"
+          ],
+          correct: 1,
+          explanation: "<strong>בייט אחד = 8 ביטים</strong> 🎯<div class='example'>🔢 דמיין שורה של 8 מתגים: 1 0 1 1 0 0 1 0<br>זה בייט אחד!<br><br>למה דווקא 8? כי עם 8 ביטים אפשר ליצור <strong>256 צירופים שונים</strong> (2 בחזקת 8) — מספיק כדי לייצג את כל האותיות, ספרות וסימנים!</div>"
+        },
+        {
+          q: "מה אפשר לאחסן בבייט אחד?",
+          hint: "תחשוב על אותיות במקלדת...",
+          options: [
+            "סרט שלם",
+            "תמונה ברזולוציה גבוהה",
+            "תו אחד — אות, ספרה או סימן",
+            "שיר שלם"
+          ],
+          correct: 2,
+          explanation: "בייט אחד יכול לאחסן <strong>תו אחד</strong> — אות אחת (A, ב), ספרה (5) או סימן (!).<div class='example'>📝 המילה 'שלום' = 4 תווים = 4 בייטים (בערך)<br>📝 'Hello' = 5 תווים = 5 בייטים<br><br>כל אות שאתה כותב במקלדת תופסת בייט אחד בזיכרון של המחשב!</div>"
+        },
+        {
+          q: "כמה ביטים יש ב-3 בייטים?",
+          hint: "פשוט תכפיל: 3 × 8 = ?",
+          options: [
+            "11 ביטים",
+            "16 ביטים",
+            "24 ביטים",
+            "32 ביטים"
+          ],
+          correct: 2,
+          explanation: "<strong>3 בייטים × 8 ביטים = 24 ביטים</strong> ✅<div class='example'>🧮 הנוסחה תמיד: מספר_בייטים × 8 = מספר_ביטים<br><br>למשל:<br>• 5 בייטים = 5 × 8 = 40 ביטים<br>• 10 בייטים = 10 × 8 = 80 ביטים<br>• 100 בייטים = 100 × 8 = 800 ביטים</div>"
+        }
+      ]
+    },
+    {
+      num: "משימה 3",
+      title: "עולם היחידות הענקיות",
+      emoji: "🌍",
+      desc: "כשמדובר בקבצים, בייטים זה קטן מדי. בוא נכיר את האחים הגדולים: KB, MB, GB ו-TB!",
+      questions: [
+        {
+          q: "כמה בייטים יש בקילובייט (KB)?",
+          hint: "Kilo בדרך כלל פירושו 1000... אבל במחשב זה קצת יותר",
+          options: [
+            "100 בייטים",
+            "1,024 בייטים (בקירוב 1,000)",
+            "1,000,000 בייטים",
+            "10 בייטים"
+          ],
+          correct: 1,
+          explanation: "<strong>1 KB ≈ 1,024 בייטים</strong> (בערך 1000) 📏<div class='example'>🎯 בעולם המחשבים סופרים בכפולות של 2:<br>2^10 = <strong>1,024</strong><br><br>אבל ביום-יום, רוב האנשים אומרים פשוט 'בערך 1000 בייטים' — וזה בסדר גמור! 👌</div>"
+        },
+        {
+          q: "סדר את היחידות מהקטנה לגדולה:",
+          hint: "ביט → בייט → קילו → מגה → גיגה → טרה",
+          options: [
+            "GB, KB, MB, TB",
+            "TB, GB, MB, KB",
+            "Bit, Byte, KB, MB, GB, TB",
+            "Byte, Bit, MB, KB"
+          ],
+          correct: 2,
+          explanation: "הסדר הנכון מהקטן לגדול: <strong>Bit → Byte → KB → MB → GB → TB</strong> 📊<div class='example'>🪜 'הסולם הדיגיטלי':<br>• 1 בייט = 8 ביטים<br>• 1 KB (קילובייט) ≈ 1,000 בייטים<br>• 1 MB (מגה-בייט) ≈ 1,000 KB<br>• 1 GB (גיגה-בייט) ≈ 1,000 MB<br>• 1 TB (טרה-בייט) ≈ 1,000 GB<br><br>כל יחידה גדולה פי 1000 מקודמתה! 🚀</div>"
+        },
+        {
+          q: "איזה קובץ יהיה כנראה הכי גדול?",
+          hint: "תחשוב כמה מידע יש בסרט לעומת מסמך טקסט...",
+          options: [
+            "מסמך טקסט (Word) של דף אחד",
+            "תמונה רגילה מהטלפון",
+            "שיר MP3",
+            "סרט באיכות גבוהה של שעתיים"
+          ],
+          correct: 3,
+          explanation: "<strong>סרט הוא הכי גדול</strong> כי הוא מכיל המון תמונות + סאונד + לאורך זמן! 🎬<div class='example'>📊 בערך כמה כל אחד תופס:<br>• 📄 מסמך Word דף אחד ≈ <strong>30 KB</strong><br>• 📸 תמונה רגילה ≈ <strong>3 MB</strong><br>• 🎵 שיר MP3 ≈ <strong>5 MB</strong><br>• 🎬 סרט באיכות גבוהה ≈ <strong>4-8 GB</strong> 🔥<br><br>סרט גדול פי <em>אלפים</em> ממסמך טקסט!</div>"
+        }
+      ]
+    },
+    {
+      num: "משימה 4 - האתגר הגדול",
+      title: "בעולם האמיתי",
+      emoji: "🌟",
+      desc: "המשימה הסופית! עכשיו ניישם את כל מה שלמדת על העולם האמיתי. אתה כבר כמעט מאסטר!",
+      questions: [
+        {
+          q: "יש לך כונן בנפח 1 TB. כמה תמונות בגודל 5 MB בערך תוכל לאחסן שם?",
+          hint: "1 TB ≈ 1,000,000 MB. תחלק ב-5...",
+          options: [
+            "200 תמונות",
+            "5,000 תמונות",
+            "200,000 תמונות",
+            "מיליארד תמונות"
+          ],
+          correct: 2,
+          explanation: "<strong>1 TB ≈ 1,000,000 MB</strong>, ו-1,000,000 ÷ 5 = <strong>200,000 תמונות</strong>! 📸<div class='example'>🧮 החישוב צעד-צעד:<br>1 TB = 1,000 GB<br>1,000 GB = 1,000,000 MB<br>1,000,000 ÷ 5 MB = <strong>200,000 תמונות</strong><br><br>זה המון! 🤯 (זאת הסיבה שכוננים גדולים שווים)</div>"
+        },
+        {
+          q: "טלפון עם 128 GB אחסון — איך זה משתווה ל-1 TB?",
+          hint: "TB הוא פי 1000 מ-GB...",
+          options: [
+            "1 TB יותר גדול פי 8 בערך מ-128 GB",
+            "הם בערך אותו דבר",
+            "128 GB יותר גדול",
+            "1 TB יותר קטן"
+          ],
+          correct: 0,
+          explanation: "<strong>1 TB ≈ 1,000 GB</strong>, אז 1,000 ÷ 128 ≈ <strong>פי 8</strong>! 📱<div class='example'>📊 לכן:<br>• טלפון עם 128 GB = די הרבה (כמה אלפי תמונות + אפליקציות + סרטונים)<br>• כונן 1 TB = פי 8 יותר!<br><br>זאת הסיבה שכוננים חיצוניים שימושיים — הם מוסיפים שטח אחסון עצום! 💪</div>"
+        },
+        {
+          q: "אינטרנט במהירות 100 Mbps — האות M כאן מסמן מגה-ביט (לא מגה-בייט!). למה זה חשוב?",
+          hint: "זוכר? 1 בייט = 8 ביטים. אז 100 מגה-ביט בשנייה = ?",
+          options: [
+            "אין הבדל בכלל",
+            "מגה-ביט הוא פי 8 קטן יותר ממגה-בייט! 100 Mbps = רק 12.5 MB/שנייה",
+            "מגה-ביט יותר גדול ממגה-בייט",
+            "המהירות כפולה"
+          ],
+          correct: 1,
+          explanation: "🎯 <strong>טריק חשוב!</strong> חברות אינטרנט מודדות במגה-ביט (Mb), לא במגה-בייט (MB).<div class='example'>📡 100 Mbps (מגה-ביט בשנייה) = 100 ÷ 8 = <strong>12.5 MB/שנייה</strong><br><br>זה אומר שאם אתה מוריד קובץ של 1 GB (=1024 MB):<br>1024 ÷ 12.5 ≈ <strong>82 שניות</strong> ≈ דקה וחצי<br><br>📌 שים לב: <strong>b קטן = ביט</strong>, <strong>B גדול = בייט</strong>. ההבדל הוא פי 8!</div>"
+        }
+      ]
+    }
+  ];
+
+  // ===== Game State =====
+  let state = {
+    playerName: "",
+    score: 0,
+    streak: 0,
+    maxStreak: 0,
+    lives: 3,
+    correctCount: 0,
+    currentMission: 0,
+    currentQuestion: 0,
+    answered: false
+  };
+
+  const totalQuestions = missions.reduce((sum, m) => sum + m.questions.length, 0);
+  let questionIndex = 0;
+
+  // ===== Screen Management =====
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ===== Start Game =====
+  function startGame() {
+    const name = document.getElementById('playerName').value.trim() || "גיבור";
+    state.playerName = name;
+    document.getElementById('hud').style.display = 'flex';
+    showMission();
+  }
+
+  // ===== Mission =====
+  function showMission() {
+    const m = missions[state.currentMission];
+    document.getElementById('missionNum').textContent = m.num;
+    document.getElementById('missionTitle').textContent = m.title;
+    document.getElementById('missionEmoji').textContent = m.emoji;
+    document.getElementById('missionDesc').textContent = `${state.playerName}, ${m.desc}`;
+    showScreen('missionScreen');
+  }
+
+  function startMission() {
+    state.currentQuestion = 0;
+    showQuestion();
+  }
+
+  // ===== Question =====
+  function showQuestion() {
+    const m = missions[state.currentMission];
+    const q = m.questions[state.currentQuestion];
+    state.answered = false;
+
+    document.getElementById('questionBadge').textContent = `שאלה ${questionIndex + 1}/${totalQuestions}`;
+    document.getElementById('questionText').textContent = q.q;
+
+    const hintEl = document.getElementById('questionHint');
+    if (q.hint) {
+      hintEl.textContent = '💡 ' + q.hint;
+      hintEl.style.display = 'block';
+    } else {
+      hintEl.style.display = 'none';
+    }
+
+    const optionsContainer = document.getElementById('optionsContainer');
+    optionsContainer.innerHTML = '';
+    const letters = ['א', 'ב', 'ג', 'ד'];
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option';
+      btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${opt}</span>`;
+      btn.onclick = () => selectAnswer(i, q.correct, q.explanation);
+      optionsContainer.appendChild(btn);
+    });
+
+    document.getElementById('explanation').className = 'explanation';
+    document.getElementById('nextBtn').classList.remove('show');
+
+    showScreen('questionScreen');
+  }
+
+  // ===== Answer =====
+  function selectAnswer(selected, correct, explanation) {
+    if (state.answered) return;
+    state.answered = true;
+
+    const buttons = document.querySelectorAll('.option');
+    buttons.forEach(b => b.disabled = true);
+
+    const isCorrect = selected === correct;
+
+    if (isCorrect) {
+      buttons[selected].classList.add('correct');
+      state.streak++;
+      state.maxStreak = Math.max(state.maxStreak, state.streak);
+      let earned = 100;
+      let bonusMsg = '';
+      if (state.streak >= 3) {
+        earned += 50;
+        bonusMsg = ' + 50 בונוס רצף! 🔥';
+      }
+      state.score += earned;
+      state.correctCount++;
+
+      showToast(`+${earned} נקודות!${bonusMsg}`, false);
+      animateScore();
+
+      const exp = document.getElementById('explanation');
+      exp.className = 'explanation show correct';
+      document.getElementById('explanationHeader').innerHTML = `✅ תשובה נכונה! מעולה ${state.playerName}!`;
+      document.getElementById('explanationBody').innerHTML = explanation;
+
+      createConfetti();
+    } else {
+      buttons[selected].classList.add('wrong');
+      buttons[correct].classList.add('correct');
+      state.streak = 0;
+      state.lives--;
+
+      updateLives();
+      showToast(`לא נורא — לומדים מטעויות 💪`, true);
+
+      const exp = document.getElementById('explanation');
+      exp.className = 'explanation show wrong';
+      document.getElementById('explanationHeader').innerHTML = `❌ לא נורא! התשובה הנכונה היא ${['א','ב','ג','ד'][correct]}`;
+      document.getElementById('explanationBody').innerHTML = explanation + `<br><br>💪 <strong>אל תתייאש!</strong> אפילו הגיבורים הכי גדולים נופלים — וקמים!`;
+    }
+
+    updateHUD();
+    document.getElementById('nextBtn').classList.add('show');
+
+    if (state.lives <= 0) {
+      setTimeout(() => endGame(false), 100);
+    }
+  }
+
+  function nextQuestion() {
+    if (state.lives <= 0) {
+      endGame(false);
+      return;
+    }
+
+    questionIndex++;
+    state.currentQuestion++;
+    const m = missions[state.currentMission];
+
+    if (state.currentQuestion < m.questions.length) {
+      showQuestion();
+    } else {
+      state.currentMission++;
+      if (state.currentMission < missions.length) {
+        showMission();
+      } else {
+        endGame(true);
+      }
+    }
+  }
+
+  // ===== HUD =====
+  function updateHUD() {
+    document.getElementById('scoreDisplay').textContent = state.score;
+    document.getElementById('streakDisplay').textContent = state.streak;
+    const progress = (questionIndex / totalQuestions) * 100;
+    document.getElementById('progressFill').style.width = (questionIndex >= totalQuestions ? 100 : ((questionIndex + (state.answered ? 1 : 0)) / totalQuestions) * 100) + '%';
+  }
+
+  function updateLives() {
+    const hearts = document.querySelectorAll('#livesDisplay .heart');
+    hearts.forEach((h, i) => {
+      if (i >= state.lives) h.classList.add('lost');
+      else h.classList.remove('lost');
+    });
+  }
+
+  function animateScore() {
+    const el = document.getElementById('scoreDisplay');
+    el.style.transform = 'scale(1.3)';
+    el.style.color = 'var(--green)';
+    setTimeout(() => {
+      el.style.transform = '';
+      el.style.color = '';
+    }, 400);
+  }
+
+  // ===== Toast =====
+  function showToast(msg, danger = false) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast show' + (danger ? ' danger' : '');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // ===== Confetti =====
+  function createConfetti() {
+    const colors = ['#00f0ff', '#ff2ec4', '#00ff9d', '#ffd60a', '#9d4edd'];
+    for (let i = 0; i < 30; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.animationDelay = Math.random() * 0.5 + 's';
+      c.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }
+  }
+
+  // ===== End Game =====
+  function endGame(success) {
+    document.getElementById('finalScore').textContent = state.score;
+    document.getElementById('finalCorrect').textContent = `${state.correctCount}/${totalQuestions}`;
+    document.getElementById('finalStreak').textContent = state.maxStreak;
+
+    let title, emoji, msg, achievement;
+
+    if (!success) {
+      title = `נסיון אמיץ, ${state.playerName}!`;
+      emoji = '💪';
+      msg = 'הפסדת חיים, אבל למדת המון! נסה שוב — אני יודע שאתה מסוגל!';
+      achievement = '🎖️ תואר: לוחם דיגיטלי אמיץ';
+    } else if (state.score >= 1300) {
+      title = `אגדה! ${state.playerName}!`;
+      emoji = '👑';
+      msg = 'וואו! אתה ממש מאסטר אמיתי! ענית כמעט על הכל ובאומץ!';
+      achievement = '👑 תואר: מאסטר אגדי של הקוד';
+      createConfetti();
+      setTimeout(createConfetti, 500);
+      setTimeout(createConfetti, 1000);
+    } else if (state.score >= 1000) {
+      title = `מצוין, ${state.playerName}!`;
+      emoji = '🏆';
+      msg = 'השלמת את ההרפתקה עם ניקוד מצוין! אתה ממש מבין בעולם הדיגיטלי!';
+      achievement = '🏆 תואר: מאסטר של הקוד';
+      createConfetti();
+    } else if (state.score >= 700) {
+      title = `כל הכבוד, ${state.playerName}!`;
+      emoji = '🥈';
+      msg = 'עברת את ההרפתקה! עוד קצת תרגול ותהיה מאסטר אמיתי.';
+      achievement = '🥈 תואר: מתמחה דיגיטלי';
+    } else {
+      title = `סיימת, ${state.playerName}!`;
+      emoji = '🌱';
+      msg = 'התחלת את המסע — וזה הכי חשוב! נסה שוב כדי לקבל ציון יותר גבוה.';
+      achievement = '🌱 תואר: חניך דיגיטלי';
+    }
+
+    document.getElementById('finalEmoji').textContent = emoji;
+    document.getElementById('finalTitle').textContent = title;
+    document.getElementById('finalMessage').textContent = msg;
+    document.getElementById('achievementText').textContent = achievement;
+
+    document.getElementById('summaryText').innerHTML = `
+      🧠 <strong>מה למדת:</strong><br>
+      • ביט הוא יחידת המידע הקטנה ביותר (0 או 1)<br>
+      • 8 ביטים = בייט אחד (=תו אחד)<br>
+      • הסולם: Bit → Byte → KB → MB → GB → TB<br>
+      • כל יחידה גדולה פי 1000 מקודמתה<br>
+      • שים לב: Mb (ביט) ≠ MB (בייט) — הבדל פי 8!
+    `;
+
+    document.getElementById('progressFill').style.width = '100%';
+    showScreen('finalScreen');
+  }
+
+  // ===== Restart =====
+  function restartGame() {
+    state = {
+      playerName: "",
+      score: 0,
+      streak: 0,
+      maxStreak: 0,
+      lives: 3,
+      correctCount: 0,
+      currentMission: 0,
+      currentQuestion: 0,
+      answered: false
+    };
+    questionIndex = 0;
+    document.getElementById('playerName').value = '';
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('progressFill').style.width = '0%';
+    document.querySelectorAll('#livesDisplay .heart').forEach(h => h.classList.remove('lost'));
+    updateHUD();
+    showScreen('welcomeScreen');
+  }
+
+  // Floating bits decoration
+  function createFloatingBits() {
+    setInterval(() => {
+      if (document.querySelectorAll('.floating-bit').length > 15) return;
+      const bit = document.createElement('div');
+      bit.className = 'floating-bit';
+      bit.textContent = Math.random() > 0.5 ? '1' : '0';
+      bit.style.left = Math.random() * 100 + 'vw';
+      bit.style.fontSize = (Math.random() * 30 + 20) + 'px';
+      bit.style.animationDuration = (Math.random() * 5 + 5) + 's';
+      document.body.appendChild(bit);
+      setTimeout(() => bit.remove(), 10000);
+    }, 800);
+  }
+  createFloatingBits();
+
+  // Enter key support
+  document.getElementById('playerName').addEventListener('keypress', e => {
+    if (e.key === 'Enter') startGame();
+  });
+</script>
+
+</body>
+</html>
